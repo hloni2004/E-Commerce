@@ -1,4 +1,4 @@
-package za.ac.ecommerce.domain;
+package za.ac.cput.domain;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
