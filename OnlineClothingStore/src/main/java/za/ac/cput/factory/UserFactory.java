@@ -7,6 +7,7 @@ import za.ac.cput.domain.Order;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 public class UserFactory {
     public static User createUser(
@@ -22,7 +23,21 @@ public class UserFactory {
             Cart cart,
             List<Order> orders
     ) {
-        // Add validation as needed
+        if (userId == null || userId.isEmpty())
+            throw new IllegalArgumentException("User ID is required");
+        if (username == null || username.isEmpty())
+            throw new IllegalArgumentException("Username is required");
+        if (email == null || email.isEmpty())
+            throw new IllegalArgumentException("Email is required");
+        if (password == null || password.isEmpty())
+            throw new IllegalArgumentException("Password is required");
+        if (role == null || role.isEmpty())
+            throw new IllegalArgumentException("Role is required");
+        if (createdAt == null)
+            throw new IllegalArgumentException("CreatedAt is required");
+        if (updatedAt == null)
+            throw new IllegalArgumentException("UpdatedAt is required");
+
         return new User.Builder()
                 .setUserId(userId)
                 .setUsername(username)
