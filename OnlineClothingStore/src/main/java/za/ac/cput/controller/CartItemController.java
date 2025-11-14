@@ -59,19 +59,19 @@ public class CartItemController {
 
     @GetMapping("/cart/{cartId}")
     public ResponseEntity<List<CartItem>> getCartItemsByCartId(@PathVariable String cartId) {
-        List<CartItem> cartItems = cartItemService.getCartItemsByCartId(cartId);
+        List<CartItem> cartItems = cartItemService.getItemsByCartId(cartId);
         return new ResponseEntity<>(cartItems, HttpStatus.OK);
     }
 
     @GetMapping("/product/{productId}")
     public ResponseEntity<List<CartItem>> getCartItemsByProductId(@PathVariable String productId) {
-        List<CartItem> cartItems = cartItemService.getCartItemsByProductId(productId);
-        return new ResponseEntity<>(cartItems, HttpStatus.OK);
+        // This endpoint is removed as the service doesn't support finding by product ID alone
+        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
     }
 
     @GetMapping("/cart/{cartId}/product/{productId}")
     public ResponseEntity<CartItem> getCartItemByCartAndProduct(@PathVariable String cartId, @PathVariable String productId) {
-        CartItem cartItem = cartItemService.getCartItemByCartIdAndProductId(cartId, productId);
+        CartItem cartItem = cartItemService.getItemByCartIdAndProductId(cartId, productId);
         if (cartItem != null) {
             return new ResponseEntity<>(cartItem, HttpStatus.OK);
         }
@@ -80,7 +80,11 @@ public class CartItemController {
 
     @DeleteMapping("/cart/{cartId}")
     public ResponseEntity<Void> deleteByCartId(@PathVariable String cartId) {
-        cartItemService.deleteByCartId(cartId);
+        // Note: This requires creating a Cart object or using the service differently
+        List<CartItem> items = cartItemService.getItemsByCartId(cartId);
+        for (CartItem item : items) {
+            cartItemService.delete(item.getCartItemId());
+        }
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

@@ -68,7 +68,8 @@ public class CartController {
 
     @GetMapping("/exists/user/{userId}")
     public ResponseEntity<Boolean> existsCartForUserId(@PathVariable String userId) {
-        boolean exists = cartService.existsCartForUserId(userId);
+        Cart cart = cartService.getCartByUserId(userId);
+        boolean exists = (cart != null);
         return new ResponseEntity<>(exists, HttpStatus.OK);
     }
 }

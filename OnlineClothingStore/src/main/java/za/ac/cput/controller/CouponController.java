@@ -70,27 +70,27 @@ public class CouponController {
 
     @GetMapping("/active")
     public ResponseEntity<List<Coupon>> getActiveCoupons() {
-        List<Coupon> coupons = couponService.getActiveCoupons(LocalDateTime.now());
+        List<Coupon> coupons = couponService.getActiveCouponsNotExpired();
         return new ResponseEntity<>(coupons, HttpStatus.OK);
     }
 
-    @GetMapping("/discount/greater/{discount}")
-    public ResponseEntity<List<Coupon>> getCouponsByDiscountGreaterThan(@PathVariable double discount) {
-        List<Coupon> coupons = couponService.getCouponsByDiscountPercentageGreaterThan(discount);
+    @GetMapping("/discount/range")
+    public ResponseEntity<List<Coupon>> getCouponsByDiscountRange(@RequestParam double min, @RequestParam double max) {
+        List<Coupon> coupons = couponService.getCouponsByDiscountRange(min, max);
         return new ResponseEntity<>(coupons, HttpStatus.OK);
     }
 
-    @GetMapping("/discount/less/{discount}")
-    public ResponseEntity<List<Coupon>> getCouponsByDiscountLessThan(@PathVariable double discount) {
-        List<Coupon> coupons = couponService.getCouponsByDiscountPercentageLessThan(discount);
+    @GetMapping("/expiring/before")
+    public ResponseEntity<List<Coupon>> getExpiringCouponsBefore(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime date) {
+        List<Coupon> coupons = couponService.getCouponsExpiringBefore(date);
         return new ResponseEntity<>(coupons, HttpStatus.OK);
     }
 
-    @GetMapping("/expiring")
-    public ResponseEntity<List<Coupon>> getExpiringCoupons(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime start,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime end) {
-        List<Coupon> coupons = couponService.getCouponsByExpiryDateBetween(start, end);
+    @GetMapping("/expiring/after")
+    public ResponseEntity<List<Coupon>> getExpiringCouponsAfter(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime date) {
+        List<Coupon> coupons = couponService.getCouponsExpiringAfter(date);
         return new ResponseEntity<>(coupons, HttpStatus.OK);
     }
 
