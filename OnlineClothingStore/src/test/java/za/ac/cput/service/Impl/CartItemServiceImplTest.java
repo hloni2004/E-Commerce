@@ -20,6 +20,18 @@ class CartItemServiceImplTest {
     @Autowired
     private CartItemService cartItemService;
 
+    @Autowired
+    private UserServiceImpl userService;
+
+    @Autowired
+    private CartServiceImpl cartService;
+
+    @Autowired
+    private CategoryServiceImpl categoryService;
+
+    @Autowired
+    private ProductServiceImpl productService;
+
     private static User testUser;
     private static Cart testCart;
     private static Category testCategory;
@@ -71,6 +83,40 @@ class CartItemServiceImplTest {
     @Test
     @Order(1)
     void testCreate() {
+        // Save all dependent entities first
+        User savedUser = userService.save(testUser);
+        assertNotNull(savedUser);
+        
+        // Update testCart with saved user
+        testCart = CartFactory.buildCart(testCart.getCartId(), savedUser);
+        Cart savedCart = cartService.create(testCart);
+        assertNotNull(savedCart);
+        
+        // Save category
+        Category savedCategory = categoryService.create(testCategory);
+        assertNotNull(savedCategory);
+        
+        // Update testProduct with saved category
+        testProduct = ProductFactory.createProduct(
+                testProduct.getProductId(),
+                testProduct.getName(),
+                testProduct.getDescription(),
+                testProduct.getPrice(),
+                testProduct.getStockQuantity(),
+                testProduct.getImageUrl(),
+                savedCategory
+        );
+        Product savedProduct = productService.save(testProduct);
+        assertNotNull(savedProduct);
+        
+        // Update testCartItem with saved cart and product
+        testCartItem = CartItemFactory.buildCartItem(
+                testCartItem.getCartItemId(),
+                savedCart,
+                savedProduct,
+                testCartItem.getQuantity()
+        );
+        
         CartItem created = cartItemService.create(testCartItem);
         assertNotNull(created);
         assertEquals(testCartItem.getCartItemId(), created.getCartItemId());

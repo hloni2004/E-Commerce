@@ -1,4 +1,4 @@
 package za.ac.cput.service;
 
-public interface IService {
+public interface IService{
 }

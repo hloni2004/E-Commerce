@@ -21,6 +21,9 @@ class AuditLogServiceImplTest {
     @Autowired
     private AuditLogService auditLogService;
 
+    @Autowired
+    private UserServiceImpl userService;
+
     private static User testUser;
     private static AuditLog testAuditLog;
     private static LocalDateTime testTimestamp;
@@ -55,6 +58,19 @@ class AuditLogServiceImplTest {
     @Test
     @Order(1)
     void testCreate() {
+        // First save the user to the database
+        User savedUser = userService.save(testUser);
+        assertNotNull(savedUser);
+        
+        // Update testAuditLog with the saved user
+        testAuditLog = AuditLogFactory.buildAuditLog(
+                testAuditLog.getLogId(),
+                savedUser,
+                testAuditLog.getAction(),
+                testAuditLog.getTimestamp(),
+                testAuditLog.getDetails()
+        );
+        
         AuditLog created = auditLogService.create(testAuditLog);
         assertNotNull(created);
         assertEquals(testAuditLog.getLogId(), created.getLogId());

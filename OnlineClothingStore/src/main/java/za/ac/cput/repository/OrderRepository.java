@@ -32,6 +32,21 @@ public interface OrderRepository extends JpaRepository<Order, String> {
     // Find orders containing a specific product - FIXED
     List<Order> findByItems_Product_ProductId(String productId);
 
+    // Find orders by a specific shipping address
+    List<Order> findByShippingAddress(za.ac.cput.domain.Address address);
+
+    // Find orders by user, ordered by date descending
+    List<Order> findByUserOrderByOrderDateDesc(User user);
+
+    // Find orders by status, ordered by date ascending
+    List<Order> findByStatusOrderByOrderDateAsc(String status);
+
+    // Check if orders exist for user with specific status
+    boolean existsByUserAndStatus(User user, String status);
+
+    // Find orders containing a specific order item ID
+    List<Order> findByItems_OrderItemId(String orderItemId);
+
     // Count orders by user
     long countByUser(User user);
 

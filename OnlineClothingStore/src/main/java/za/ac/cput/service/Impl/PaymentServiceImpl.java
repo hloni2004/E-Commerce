@@ -52,43 +52,41 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     public List<Payment> findByOrder(Order order) {
-        return List.of();
+        return paymentRepository.findByOrder(order);
     }
 
     @Override
     public List<Payment> findByStatus(String status) {
-        return List.of();
+        return paymentRepository.findByStatus(status);
     }
 
     @Override
     public List<Payment> findByPaymentMethod(String paymentMethod) {
-        return List.of();
+        return paymentRepository.findByPaymentMethod(paymentMethod);
     }
 
     @Override
     public List<Payment> findByPaymentDateBetween(LocalDateTime start, LocalDateTime end) {
-        return List.of();
+        return paymentRepository.findByPaymentDateBetween(start, end);
     }
 
     @Override
     public List<Payment> findByAmountGreaterThan(double amount) {
-        return List.of();
+        return paymentRepository.findByAmountGreaterThan(amount);
     }
 
     @Override
     public List<Payment> findByAmountLessThan(double amount) {
-        return List.of();
+        return paymentRepository.findByAmountLessThan(amount);
     }
 
     @Override
     public List<Payment> findByOrderOrderId(String orderId) {
-        return List.of();
+        return paymentRepository.findByOrderOrderId(orderId);
     }
 
     @Override
     public long countByStatus(String status) {
-        return 0;
+        return paymentRepository.countByStatus(status);
     }
-
-    // Other methods remain unchanged, but you can add similar try-catch blocks if needed
 }

@@ -89,7 +89,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<Order> findByItemsProductId(String productId) {
-        return orderRepository.findByItems_ProductId(productId);
+        return orderRepository.findByItems_Product_ProductId(productId);
     }
 
     @Override
