@@ -4,10 +4,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import za.ac.cput.domain.Cart;
 import za.ac.cput.domain.CartItem;
+import za.ac.cput.domain.Product;
+import za.ac.cput.factory.CartItemFactory;
 import za.ac.cput.service.CartItemService;
+import za.ac.cput.service.CartService;
+import za.ac.cput.service.ProductService;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/cart-items")
@@ -15,16 +22,70 @@ import java.util.List;
 public class CartItemController {
 
     private final CartItemService cartItemService;
+    private final CartService cartService;
+    private final ProductService productService;
 
     @Autowired
-    public CartItemController(CartItemService cartItemService) {
+    public CartItemController(CartItemService cartItemService, CartService cartService, ProductService productService) {
         this.cartItemService = cartItemService;
+        this.cartService = cartService;
+        this.productService = productService;
     }
 
     @PostMapping
-    public ResponseEntity<CartItem> create(@RequestBody CartItem cartItem) {
-        CartItem created = cartItemService.create(cartItem);
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
+    public ResponseEntity<?> create(@RequestBody CartItem cartItem) {
+        try {
+            // Get cart
+            Cart cart = cartService.read(cartItem.getCart().getCartId());
+            if (cart == null) {
+                return ResponseEntity.badRequest().body("Cart not found");
+            }
+
+            // Get product
+            Product product = productService.findById(cartItem.getProduct().getProductId())
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
+
+            // Check if item already exists in cart
+            CartItem existingItem = cartItemService.getItemByCartIdAndProductId(
+                    cart.getCartId(), 
+                    product.getProductId()
+            );
+
+            if (existingItem != null) {
+                // Update quantity if item exists
+                int newQuantity = existingItem.getQuantity() + cartItem.getQuantity();
+                if (newQuantity > product.getStockQuantity()) {
+                    return ResponseEntity.badRequest().body("Insufficient stock");
+                }
+                
+                CartItem updatedItem = new CartItem.Builder()
+                        .setCartItemId(existingItem.getCartItemId())
+                        .setCart(cart)
+                        .setProduct(product)
+                        .setQuantity(newQuantity)
+                        .build();
+                
+                CartItem updated = cartItemService.update(updatedItem);
+                return new ResponseEntity<>(updated, HttpStatus.OK);
+            } else {
+                // Create new cart item
+                String cartItemId = UUID.randomUUID().toString();
+                CartItem newCartItem = CartItemFactory.buildCartItem(
+                        cartItemId,
+                        cart,
+                        product,
+                        cartItem.getQuantity()
+                );
+                
+                CartItem created = cartItemService.create(newCartItem);
+                return new ResponseEntity<>(created, HttpStatus.CREATED);
+            }
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error adding item to cart: " + e.getMessage());
+        }
     }
 
     @GetMapping("/{id}")
@@ -37,12 +98,42 @@ public class CartItemController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CartItem> update(@PathVariable String id, @RequestBody CartItem cartItem) {
-        CartItem updated = cartItemService.update(cartItem);
-        if (updated != null) {
-            return new ResponseEntity<>(updated, HttpStatus.OK);
+    public ResponseEntity<?> update(@PathVariable String id, @RequestBody Map<String, Object> updates) {
+        try {
+            CartItem cartItem = cartItemService.read(id);
+            if (cartItem == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Update quantity if provided
+            if (updates.containsKey("quantity")) {
+                int newQuantity = (int) updates.get("quantity");
+                
+                // Validate quantity
+                if (newQuantity < 1) {
+                    return ResponseEntity.badRequest().body("Quantity must be at least 1");
+                }
+                
+                if (newQuantity > cartItem.getProduct().getStockQuantity()) {
+                    return ResponseEntity.badRequest().body("Insufficient stock");
+                }
+                
+                CartItem updatedItem = new CartItem.Builder()
+                        .setCartItemId(cartItem.getCartItemId())
+                        .setCart(cartItem.getCart())
+                        .setProduct(cartItem.getProduct())
+                        .setQuantity(newQuantity)
+                        .build();
+                
+                CartItem saved = cartItemService.update(updatedItem);
+                return ResponseEntity.ok(saved);
+            }
+            
+            return ResponseEntity.badRequest().body("No updates provided");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error updating cart item: " + e.getMessage());
         }
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @DeleteMapping("/{id}")

@@ -25,6 +25,13 @@ public class Product {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Lob
+    @Column(name = "image_data", columnDefinition = "LONGBLOB")
+    private byte[] imageData;
+
+    @Column(name = "image_type")
+    private String imageType;
+
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
@@ -38,6 +45,8 @@ public class Product {
         this.price = builder.price;
         this.stockQuantity = builder.stockQuantity;
         this.imageUrl = builder.imageUrl;
+        this.imageData = builder.imageData;
+        this.imageType = builder.imageType;
         this.category = builder.category;
     }
 
@@ -47,6 +56,8 @@ public class Product {
     public double getPrice() { return price; }
     public int getStockQuantity() { return stockQuantity; }
     public String getImageUrl() { return imageUrl; }
+    public byte[] getImageData() { return imageData; }
+    public String getImageType() { return imageType; }
     public Category getCategory() { return category; }
 
     @Override
@@ -66,6 +77,8 @@ public class Product {
         private double price;
         private int stockQuantity;
         private String imageUrl;
+        private byte[] imageData;
+        private String imageType;
         private Category category;
 
         public Builder setProductId(String productId) {
@@ -90,6 +103,14 @@ public class Product {
         }
         public Builder setImageUrl(String imageUrl) {
             this.imageUrl = imageUrl;
+            return this;
+        }
+        public Builder setImageData(byte[] imageData) {
+            this.imageData = imageData;
+            return this;
+        }
+        public Builder setImageType(String imageType) {
+            this.imageType = imageType;
             return this;
         }
         public Builder setCategory(Category category) {

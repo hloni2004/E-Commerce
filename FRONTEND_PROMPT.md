@@ -15,7 +15,9 @@ http://localhost:8181
 ### Available REST API Endpoints
 
 #### 1. **User Management** (`/api/users`)
-- `POST /api/users` - Create new user (register)
+- `POST /api/users/register` - **Register new user account** (recommended for frontend)
+- `POST /api/users/login` - **Login user** (authenticate and verify credentials)
+- `POST /api/users` - Create new user (direct save, use register endpoint instead)
 - `GET /api/users/{id}` - Get user by ID
 - `GET /api/users` - Get all users
 - `GET /api/users/username/{username}` - Find user by username
@@ -24,6 +26,54 @@ http://localhost:8181
 - `GET /api/users/exists/username/{username}` - Check if username exists
 - `GET /api/users/exists/email/{email}` - Check if email exists
 - `DELETE /api/users/{id}` - Delete user
+
+**Login Request (POST /api/users/login):**
+```json
+{
+  "username": "john_doe",
+  "password": "SecurePass123!"
+}
+```
+
+**Login Response:**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "userId": "uuid-here",
+  "username": "john_doe",
+  "email": "john@example.com",
+  "role": "CUSTOMER",
+  "phoneNumber": "+27123456789"
+}
+```
+
+**Registration Request (POST /api/users/register):**
+```json
+{
+  "username": "john_doe",
+  "email": "john@example.com",
+  "password": "SecurePass123!",
+  "phoneNumber": "+27123456789",
+  "street": "123 Main Street",
+  "city": "Cape Town",
+  "province": "Western Cape",
+  "postalCode": "8001",
+  "country": "South Africa"
+}
+```
+
+**Registration Response:**
+```json
+{
+  "success": true,
+  "message": "Registration successful",
+  "userId": "generated-uuid",
+  "username": "john_doe",
+  "email": "john@example.com",
+  "role": "CUSTOMER"
+}
+```
 
 **User Object:**
 ```json
@@ -42,13 +92,51 @@ http://localhost:8181
 ---
 
 #### 2. **Product Management** (`/api/products`)
-- `POST /api/products` - Create new product
+- `POST /api/products` - Create new product (JSON)
+- `POST /api/products/upload` - **Create product with image upload** (multipart/form-data)
+- `PUT /api/products/{id}/image` - **Update product image** (multipart/form-data)
+- `GET /api/products/{id}/image` - **Get product image** (returns image bytes)
 - `GET /api/products/{id}` - Get product by ID
 - `GET /api/products` - Get all products
 - `GET /api/products/search/{name}` - Search products by name
 - `GET /api/products/category/{categoryId}` - Get products by category
 - `GET /api/products/price?min={min}&max={max}` - Get products in price range
 - `GET /api/products/stock/low?threshold={threshold}` - Get low stock products
+
+**Create Product with Image Upload (POST /api/products/upload):**
+```javascript
+const formData = new FormData();
+formData.append('name', 'Product Name');
+formData.append('description', 'Product Description');
+formData.append('price', '99.99');
+formData.append('stockQuantity', '50');
+formData.append('categoryId', 'category-uuid');
+formData.append('image', imageFile); // File object from input
+
+fetch('http://localhost:8181/api/products/upload', {
+  method: 'POST',
+  body: formData,
+  headers: {
+    // Don't set Content-Type, browser will set it with boundary
+  }
+});
+```
+
+**Update Product Image (PUT /api/products/{id}/image):**
+```javascript
+const formData = new FormData();
+formData.append('image', imageFile);
+
+fetch(`http://localhost:8181/api/products/${productId}/image`, {
+  method: 'PUT',
+  body: formData
+});
+```
+
+**Get Product Image:**
+```html
+<img src="http://localhost:8181/api/products/{productId}/image" alt="Product" />
+```
 - `GET /api/products/stock/available?threshold={threshold}` - Get available products
 - `DELETE /api/products/{id}` - Delete product
 
@@ -461,11 +549,26 @@ Backend has `@CrossOrigin(origins = "*")` enabled, so no CORS issues expected.
 ### Data Flow Examples
 
 #### User Registration Flow
-1. User fills registration form
-2. Validate email format, password strength
-3. Check if username/email exists: `GET /api/users/exists/username/{username}`
-4. Create user: `POST /api/users` with user data
-5. Auto-login or redirect to login page
+1. User fills registration form (username, email, password, phone, address details)
+2. Frontend validates:
+   - Email format
+   - Password strength (min 8 chars, uppercase, lowercase, number, special char)
+   - Phone format (South African: +27 or 0 followed by 9 digits)
+   - All address fields are required (street, city, province, postalCode, country)
+3. Check if username exists: `GET /api/users/exists/username/{username}`
+4. Check if email exists: `GET /api/users/exists/email/{email}`
+5. **Register user**: `POST /api/users/register` with RegistrationRequest including address
+6. Backend validates all inputs and checks for duplicates
+7. Backend creates user with:
+   - Auto-generated UUID as userId
+   - Default role: CUSTOMER
+   - Current timestamp for createdAt and updatedAt
+8. Backend creates address linked to user:
+   - Auto-generated UUID as addressId
+   - Linked to the created user
+9. User and address details saved to database
+10. Return success response with user info
+11. Frontend can auto-login or redirect to login page
 
 #### Add to Cart Flow
 1. User clicks "Add to Cart" on product
@@ -610,7 +713,7 @@ GET /api/products/price?min=50&max=200 → Filter by price
 
 ### Scenario 2: Complete Purchase
 ```
-POST /api/users → Register user
+POST /api/users/register → Register user
 GET /api/carts/user/{userId} → Get user's cart
 POST /api/cart-items → Add products to cart
 GET /api/addresses/user/{userId} → Get shipping addresses
@@ -633,6 +736,11 @@ GET /api/shipments/order/{orderId} → Get shipment info
 
 - **Backend Port**: `8181`
 - **Database**: MySQL on port `3306` (database: `OnlineShopping`)
+- **Default Admin Account** (created automatically on application startup):
+  - Username: `admin`
+  - Password: `Admin@123`
+  - Email: `admin@stylehub.com`
+  - Role: `ADMIN`
 - **Order Statuses**: PENDING, PAID, SHIPPED, DELIVERED, CANCELED
 - **Payment Statuses**: PENDING, COMPLETED, FAILED, REFUNDED
 - **Shipment Statuses**: PREPARING, SHIPPED, IN_TRANSIT, DELIVERED

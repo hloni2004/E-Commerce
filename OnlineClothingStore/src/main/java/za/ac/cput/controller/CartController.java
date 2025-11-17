@@ -5,9 +5,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import za.ac.cput.domain.Cart;
+import za.ac.cput.domain.User;
+import za.ac.cput.factory.CartFactory;
 import za.ac.cput.service.CartService;
+import za.ac.cput.service.UserService;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/carts")
@@ -15,16 +19,31 @@ import java.util.List;
 public class CartController {
 
     private final CartService cartService;
+    private final UserService userService;
 
     @Autowired
-    public CartController(CartService cartService) {
+    public CartController(CartService cartService, UserService userService) {
         this.cartService = cartService;
+        this.userService = userService;
     }
 
     @PostMapping
     public ResponseEntity<Cart> create(@RequestBody Cart cart) {
-        Cart created = cartService.create(cart);
-        return new ResponseEntity<>(created, HttpStatus.CREATED);
+        try {
+            // Get the user
+            User user = userService.findById(cart.getUser().getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            // Generate cart ID and create cart
+            String cartId = UUID.randomUUID().toString();
+            Cart newCart = CartFactory.buildCart(cartId, user);
+            Cart created = cartService.create(newCart);
+            return new ResponseEntity<>(created, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @GetMapping("/{id}")
